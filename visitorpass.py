@@ -12,7 +12,7 @@ from pymongo import MongoClient
 from datetime import datetime
 
 # -- MongoDB CONNECTION --
-client = MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient("mongodb+srv://siddhantgoswami2397:KjhSS0HMcd1Km3JP@siddhant.qw1vjzb.mongodb.net/?retryWrites=true&w=majority&appName=Siddhant")
 db = client["visitor_app_db"]
 users_collection = db["users"]
 requests_collection = db["visitor_requests"]
