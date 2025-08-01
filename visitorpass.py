@@ -90,11 +90,11 @@ def admin_section():
         if req['status'] == "Pending":
             col1, col2 = st.columns(2)
             with col1:
-                if st.button(f"Approve {req['timestamp']}"):
+                if st.button(f"Approve", key=f"approve_{req['timestamp']}"):
                     update_request_status(req['timestamp'], "Approved", "Approved")
                     st.rerun()
             with col2:
-                if st.button(f"Reject {req['timestamp']}"):
+                if st.button(f"Reject", key=f"reject_{req['timestamp']}"):
                     update_request_status(req['timestamp'], "Rejected", "Rejected")
                     st.rerun()
     st.header("All Requests Table")
