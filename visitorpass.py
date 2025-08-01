@@ -4,6 +4,12 @@ import streamlit as st
 from pymongo import MongoClient
 from datetime import datetime
 import pytz
+#change1
+from fpdf import FPDF
+import qrcode
+import io
+import os
+
 # -- MongoDB CONNECTION --
 client = MongoClient("mongodb+srv://siddhantgoswami2397:KjhSS0HMcd1Km3JP@siddhant.qw1vjzb.mongodb.net/?retryWrites=true&w=majority&appName=Siddhant")
 db = client["visitor_app_db"]
@@ -44,7 +50,61 @@ def get_all_requests():
 
 def update_request_status(request_id, status, comment):
     requests_collection.update_one(
-        {"timestamp": request_id}, {"$set": {"status": status, "admin_comment": comment}})
+        {"_id": request_id}, {"$set": {"status": status, "admin_comment": comment}})
+    #Change
+
+# --- PDF GENERATION ---
+def generate_pdf_for_request(request, logo_path="logo.png"):
+    pdf = FPDF()
+    pdf.add_page()
+    # Logo
+    if os.path.exists(logo_path):
+        pdf.image(logo_path, x=10, y=8, w=30)
+    pdf.set_font('Arial', 'B', 16)
+    pdf.cell(0, 20, 'Visitor Pass', ln=True, align='C')
+    pdf.ln(10)
+
+    # Info
+    pdf.set_font('Arial', '', 12)
+    fields = [
+        ("Request ID", str(request.get('_id', ''))),
+        ("Requested By", request['requested_by']),
+        ("Visitor Name", request['visitor_name']),
+        ("Contact", request['contact']),
+        ("Visit Date", request['visit_date']),
+        ("Purpose", request['purpose']),
+        ("Status", request['status']),
+        ("Admin Comment", request.get('admin_comment', '')),
+        ("Timestamp", request['timestamp']),
+    ]
+    for label, val in fields:
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(45, 10, f"{label}:", 0, 0)
+        pdf.set_font('Arial', '', 12)
+        pdf.cell(0, 10, val, ln=True)
+
+    # QR Code
+    qr_content = f"""Request ID: {str(request.get('_id',''))}
+Visitor Name: {request.get('visitor_name','')}
+Date: {request.get('visit_date','')}
+Status: {request.get('status','')}"""
+    qr_img = qrcode.make(qr_content)
+    qr_buf = io.BytesIO()
+    qr_img.save(qr_buf)
+    qr_buf.seek(0)
+    qr_file = "qr_temp.png"
+    with open(qr_file, "wb") as f:
+        f.write(qr_buf.read())
+    y_pos = pdf.get_y() + 10
+    pdf.image(qr_file, x=150, y=y_pos, w=40)
+    if os.path.exists(qr_file): os.remove(qr_file)
+
+    # Output as bytes
+    pdf_buf = io.BytesIO()
+    pdf.output(pdf_buf)
+    pdf_buf.seek(0)
+    return pdf_buf
+
 
 # -- INIT SETUP --
 create_default_users()
@@ -60,6 +120,9 @@ def login_section():
         if role:
             st.session_state["user"] = username
             st.session_state["role"] = role
+            #change3
+            st.session_state.pop("just_approved_request_id", None)
+            st.session_state.pop("pdf_ready", None) #tillhere
             st.rerun()
         else:
             st.sidebar.error("Incorrect username or password.")
@@ -87,17 +150,30 @@ def admin_section():
     st.header("All Visitor Pass Requests")
     all_reqs = get_all_requests()
     for req in all_reqs:
+        req_id = req['_id']
         st.markdown(f"**Date:** {req['timestamp']} • **Requestor:** {req['requested_by']} • **Visitor:** {req['visitor_name']} • **Status:** {req['status']}")
         if req['status'] == "Pending":
             col1, col2 = st.columns(2)
             with col1:
-                if st.button(f"Approve", key=f"approve_{req['timestamp']}"):
+                if st.button(f"Approve", key=f"approve_{req_id}"): #change
                     update_request_status(req['timestamp'], "Approved", "Approved")
+                    st.session_state["just_approved_request_id"] = req_id #change
                     st.rerun()
             with col2:
-                if st.button(f"Reject", key=f"reject_{req['timestamp']}"):
+                if st.button(f"Reject", key=f"approve_{req_id}"): #change
                     update_request_status(req['timestamp'], "Rejected", "Rejected")
                     st.rerun()
+        #change            
+        if st.session_state.get("just_approved_request_id") == req_id and req['status'] == "Approved":
+            pdf_bytes = generate_pdf_for_request(req).getvalue()
+            st.download_button(
+                label="Download Visitor Pass PDF",
+                data=pdf_bytes,
+                file_name=f"VisitorPass_{req_id}.pdf",
+                mime="application/pdf",
+                key=f"download_{req_id}"
+            )
+      
     st.header("All Requests Table")
     if all_reqs:
         st.table(all_reqs)
