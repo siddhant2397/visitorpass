@@ -157,14 +157,14 @@ def admin_section():
             with col1:
                 if st.button(f"Approve", key=f"approve_{req_id}"): #change
                     update_request_status(req_id, "Approved", "Approved")
-                    st.session_state["just_approved_request_id"] = req_id #change
+                    st.session_state["just_approved_request_id"] = str(req_id)+"AB" #change
                     st.rerun()
             with col2:
                 if st.button(f"Reject", key=f"approve_{req_id}"): #change
                     update_request_status(req_id, "Rejected", "Rejected")
                     st.rerun()
         #change            
-        if st.session_state.get("just_approved_request_id") == req_id and req['status'] == "Approved":
+        if st.session_state.get("just_approved_request_id") == (str(req_id)+"AB") and req['status'] == "Approved":
             pdf_bytes = generate_pdf_for_request(req).getvalue()
             st.download_button(
                 label="Download Visitor Pass PDF",
