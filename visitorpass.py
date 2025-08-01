@@ -9,20 +9,13 @@ from fpdf import FPDF
 import qrcode
 import io
 import os
-
-# -- MongoDB CONNECTION --
-client = MongoClient("mongodb+srv://siddhantgoswami2397:KjhSS0HMcd1Km3JP@siddhant.qw1vjzb.mongodb.net/?retryWrites=true&w=majority&appName=Siddhant")
+mongo_url = st.secrets["url"]
+client = MongoClient(mongo_url)
 db = client["visitor_app_db"]
 users_collection = db["users"]
 requests_collection = db["visitor_requests"]
 
-# -- HELPER FUNCTIONS --
 
-def create_default_users():
-    if users_collection.count_documents({"username": "admin"}) == 0:
-        users_collection.insert_one({"username": "admin", "password": "adminpass", "role": "admin"})
-    if users_collection.count_documents({"username": "user1"}) == 0:
-        users_collection.insert_one({"username": "user1", "password": "pass1", "role": "user"})
 
 def check_login(username, password):
     user = users_collection.find_one({"username": username, "password": password})
@@ -53,18 +46,17 @@ def update_request_status(request_id, status, comment):
         {"_id": request_id}, {"$set": {"status": status, "admin_comment": comment}})
     #Change
 
-# --- PDF GENERATION ---
 def generate_pdf_for_request(request, logo_path="logo.png"):
     pdf = FPDF()
     pdf.add_page()
-    # Logo
+    
     if os.path.exists(logo_path):
         pdf.image(logo_path, x=10, y=8, w=30)
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 20, 'Visitor Pass', ln=True, align='C')
     pdf.ln(10)
 
-    # Info
+
     pdf.set_font('Arial', '', 12)
     fields = [
         ("Request ID", str(request.get('_id', ''))),
@@ -83,7 +75,7 @@ def generate_pdf_for_request(request, logo_path="logo.png"):
         pdf.set_font('Arial', '', 12)
         pdf.cell(0, 10, val, ln=True)
 
-    # QR Code
+
     qr_content = f"""Request ID: {str(request.get('_id',''))}
 Visitor Name: {request.get('visitor_name','')}
 Date: {request.get('visit_date','')}
@@ -99,16 +91,14 @@ Status: {request.get('status','')}"""
     pdf.image(qr_file, x=150, y=y_pos, w=40)
     if os.path.exists(qr_file): os.remove(qr_file)
 
-    # Output as bytes
-    pdf_bytes = pdf.output(dest='S').encode('latin1')  # output() returns str, encode to bytes
+    
+    pdf_bytes = pdf.output(dest='S').encode('latin1')  
     pdf_buf = io.BytesIO(pdf_bytes)
     return pdf_buf
 
 
-# -- INIT SETUP --
-create_default_users()
 
-# -- STREAMLIT APP --
+
 
 def login_section():
     st.sidebar.title("Login")
@@ -184,7 +174,7 @@ def admin_section():
 
 
 def main():
-    st.title("Visitor Pass System (MongoDB Version)")
+    st.title("NALCO Visitor Pass System ")
     if "user" not in st.session_state:
         login_section()
         st.stop()
