@@ -174,7 +174,7 @@ def admin_section():
 
 
 def main():
-    st.title("NALCO Visitor Pass System ")
+    st.title("NALCO CISF Visitor Pass System ")
     if "user" not in st.session_state:
         login_section()
         st.stop()
