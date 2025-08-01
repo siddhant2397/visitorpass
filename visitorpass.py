@@ -100,9 +100,8 @@ Status: {request.get('status','')}"""
     if os.path.exists(qr_file): os.remove(qr_file)
 
     # Output as bytes
-    pdf_buf = io.BytesIO()
-    pdf.output(pdf_buf)
-    pdf_buf.seek(0)
+    pdf_bytes = pdf.output(dest='S').encode('latin1')  # output() returns str, encode to bytes
+    pdf_buf = io.BytesIO(pdf_bytes)
     return pdf_buf
 
 
@@ -165,10 +164,10 @@ def admin_section():
                     st.rerun()
         #change            
         if st.session_state.get("just_approved_request_id") == req_id and req['status'] == "Approved":
-            pdf_bytes = generate_pdf_for_request(req).getvalue()
+            pdf_buf = generate_pdf_for_request(req)
             st.download_button(
                 label="Download Visitor Pass PDF",
-                data=pdf_bytes,
+                data=pdf_buf,
                 file_name=f"VisitorPass_{req_id}.pdf",
                 mime="application/pdf",
                 key=f"download_{req_id}"
