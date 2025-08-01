@@ -3,7 +3,7 @@
 import streamlit as st
 from pymongo import MongoClient
 from datetime import datetime
-
+import pytz
 # -- MongoDB CONNECTION --
 client = MongoClient("mongodb+srv://siddhantgoswami2397:KjhSS0HMcd1Km3JP@siddhant.qw1vjzb.mongodb.net/?retryWrites=true&w=majority&appName=Siddhant")
 db = client["visitor_app_db"]
@@ -24,6 +24,7 @@ def check_login(username, password):
     return None
 
 def insert_request(user, visitor_name, contact, visit_date, purpose):
+    ist = pytz.timezone('Asia/Kolkata')
     requests_collection.insert_one({
         "requested_by": user,
         "visitor_name": visitor_name,
@@ -32,7 +33,7 @@ def insert_request(user, visitor_name, contact, visit_date, purpose):
         "purpose": purpose,
         "status": "Pending",
         "admin_comment": "",
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "timestamp": datetime.now(ist).strftime("%Y-%m-%d %H:%M"),
     })
 
 def get_user_requests(user):
