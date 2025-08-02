@@ -46,15 +46,24 @@ def update_request_status(request_id, status, comment):
         {"_id": request_id}, {"$set": {"status": status, "admin_comment": comment}})
     #Change
 
-def generate_pdf_for_request(request, logo_path="logo.png"):
+def generate_pdf_for_request(request, photo_file, logo_path="logo.png"):
     pdf = FPDF()
     pdf.add_page()
     
     if os.path.exists(logo_path):
         pdf.image(logo_path, x=10, y=8, w=30)
+    if photo_file is not None:
+        # Save file to temp file for FPDF compatibility (v1.x limitation)
+        photo_path = f"temp_photo_{request['_id']}.jpg"
+        with open(photo_path, "wb") as f:
+            f.write(photo_file.read())
+        pdf.image(photo_path, x=165, y=8, w=35, h=35)  # Adjust for A4
+        os.remove(photo_path)
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 20, 'Visitor Pass', ln=True, align='C')
     pdf.ln(10)
+
+    
 
 
     pdf.set_font('Arial', '', 12)
@@ -165,14 +174,17 @@ def admin_section():
                     st.rerun()
         #change            
         if st.session_state.get("just_approved_request_id") == req_id and req['status'] == "Approved":
-            pdf_buf = generate_pdf_for_request(req)
-            st.download_button(
-                label="Download Visitor Pass PDF",
-                data=pdf_buf,
-                file_name=f"VisitorPass_{req_id}.pdf",
-                mime="application/pdf",
-                key=f"download_{req_id}"
-            )
+            st.info("Upload visitor's photo for this pass:")
+            photo_file = st.file_uploader("Choose a photo", type=["jpg", "jpeg", "png"], key=f"photo_{req_id}")
+            if photo_file is not None:  
+                pdf_buf = generate_pdf_for_request(req, photo_file)
+                st.download_button(
+                    label="Download Visitor Pass PDF",
+                    data=pdf_buf,
+                    file_name=f"VisitorPass_{req_id}.pdf",
+                    mime="application/pdf",
+                    key=f"download_{req_id}"
+                )
       
     st.header("All Requests Table")
     if all_reqs:
