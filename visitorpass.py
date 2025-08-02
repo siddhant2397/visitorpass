@@ -91,7 +91,7 @@ Status: {request.get('status','')}"""
     pdf.image(qr_file, x=150, y=y_pos, w=40)
     if os.path.exists(qr_file): os.remove(qr_file)
     pdf.ln(30)   # Move cursor down
-    pdf.set_font('Arial', 'I', 9)  # Italic small font
+    pdf.set_font('Arial', 'I', 6)  # Italic small font
     pdf.set_text_color(128)        # Optional: gray color for disclaimer
 
     disclaimer_text = (
