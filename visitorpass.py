@@ -90,6 +90,18 @@ Status: {request.get('status','')}"""
     y_pos = pdf.get_y() + 10
     pdf.image(qr_file, x=150, y=y_pos, w=40)
     if os.path.exists(qr_file): os.remove(qr_file)
+    pdf.ln(30)   # Move cursor down
+    pdf.set_font('Arial', 'I', 9)  # Italic small font
+    pdf.set_text_color(128)        # Optional: gray color for disclaimer
+
+    disclaimer_text = (
+        "Disclaimer: This visitor pass is system-generated for official use only. "
+        "Any misuse, duplication, or tampering is strictly prohibited. "
+        "Please carry the pass at all times during the visit, if not found during check, it will be considered trespass. "
+        "Kindly submit the pass on gate during exit."
+    )
+    pdf.multi_cell(0, 8, disclaimer_text)
+
 
     
     pdf_bytes = pdf.output(dest='S').encode('latin1')  
